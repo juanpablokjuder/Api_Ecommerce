@@ -1,0 +1,9 @@
+# Activa la reescritura de URLs
+RewriteEngine On
+
+# Desactiva la reescritura para archivos y carpetas existentes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Convierte la ruta en parámetros p1, p2, p3...
+RewriteRule ^([^/]+)(?:/([^/]+))?(?:/([^/]+))?(?:/([^/]+))?$ index.php?p1=$1&p2=$2&p3=$3&p4=$4 [QSA,L]
