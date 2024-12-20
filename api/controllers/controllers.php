@@ -8,3 +8,4 @@ require "_contacto.controller.php";
 require "_mensaje.controller.php";
 require "_colores.controller.php";
 require "_categorias.controller.php";
+require "_mercadoPago.controller.php";
