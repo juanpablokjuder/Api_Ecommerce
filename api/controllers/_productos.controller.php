@@ -52,7 +52,21 @@ class Productos{
             }
             return $productos;
         } catch (\Throwable $th) {
-            return "asd";
+            return $th;
+        }
+    }
+    public function listado(){
+        try {
+            $database = new Database();
+            $param = [];
+            $productos =  $database->executeQuery(
+            "SELECT P.`Id`, P.`Nombre`, PA.`Base64`, PA.`Extension`
+                    FROM `tbl_productos` P 
+                    LEFT JOIN `tbl_productos_archivos` PA ON PA.`Orden` = 1 AND P.`Id` = PA.`IdProducto` 
+                    ", $param);
+            return $productos;
+        } catch (\Throwable $th) {
+            return $th;
         }
     }
     public function obtenerId(){

@@ -9,3 +9,6 @@ require "_mensaje.controller.php";
 require "_colores.controller.php";
 require "_categorias.controller.php";
 require "_mercadoPago.controller.php";
+require "_ventas.controller.php";
+require "_archivos.controller.php";
+require "_login.controller.php";

@@ -89,3 +89,29 @@ Array
 )
 
 NO VALIDO
+1
+Array
+(
+    [User-Agent] => PostmanRuntime/7.43.0
+    [Accept] => */*
+    [Postman-Token] => 6c2b5060-8382-4041-b36c-e52299015376
+    [Host] => localhost
+    [Accept-Encoding] => gzip, deflate, br
+    [Connection] => keep-alive
+)
+
+NO ENTRO
+NO VALIDO
+1
+Array
+(
+    [User-Agent] => PostmanRuntime/7.43.0
+    [Accept] => */*
+    [Postman-Token] => ab7063f3-acb0-4e10-86d7-a6e50e4f9cfc
+    [Host] => localhost
+    [Accept-Encoding] => gzip, deflate, br
+    [Connection] => keep-alive
+)
+
+NO ENTRO
+NO VALIDO

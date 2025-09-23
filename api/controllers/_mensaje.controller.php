@@ -23,6 +23,22 @@ class Mensaje{
             return $data['Nombre'];
         } catch (\Throwable $th) {
             return "asd";
+        }  
+    }
+    public function obtener(){
+        try {
+            
+            $database = new Database();
+            $params = [
+            ];
+            $response = $database->executeQuery(
+            "SELECT 
+            `Id`, `Fecha`, `Nombre`, `Email`, `Mensaje`
+            FROM `tbl_web_mensajes`", $params);
+
+            return $response;
+        } catch (\Throwable $th) {
+            return "asd";
         } 
         
 
