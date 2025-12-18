@@ -183,6 +183,13 @@ class MercadoPago
             $filas = '';
             // Obtener detalles del producto desde la base de datos
             foreach ($data['productos'] as $producto) {
+                // -- Guardar detalle de la venta
+                    $param = [
+                    "id_producto" => $producto['id_producto'],
+                    "id_color" => $producto['id_color'],
+                    "cantidad" => $producto['id_color']
+                ];
+                // 
                 $param = [
                     "id" => $producto['id_producto'],
                     "id_color" => $producto['id_color']
@@ -241,9 +248,9 @@ class MercadoPago
             ];
             $venta = $database->executeQuery(
                 "INSERT INTO `tbl_ventas` 
-                (`IdCliente`, `Estado`, `FechaAlta`)
+                (`IdCliente`, `Estado`, `FechaAlta`, `idMedioPago`)
                 VALUES
-                (:idCliente, 0, NOW())",
+                (:idCliente, 0, NOW(), 1)",
                 $param
             );
             $idVenta = $venta; // ID único para la venta
@@ -251,6 +258,22 @@ class MercadoPago
             $moneda = "ARS";
             $items = [];
             foreach ($data['productos'] as $producto) {
+                // -- Guardar detalle de la venta
+                $param = [
+                    "id_producto" => $producto['id_producto'],
+                    "id_venta" => $idVenta,
+                    "id_color" => $producto['id_color'],
+                    "cantidad" => $producto['cantidad']
+                ];
+                $detalleVenta = $database->executeQuery(
+                    "INSERT INTO `tbl_ventas_detalle` 
+                    (`IdVenta`, `IdProducto`, `IdColor`, `Cantidad`)
+                    VALUES
+                    (:id_venta, :id_producto, :id_color, :cantidad)",
+                    $param
+                );
+
+                // -- Fin
                 $param = [
                     "id" => $producto['id_producto'],
                     "id_color" => $producto['id_color']

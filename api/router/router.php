@@ -32,7 +32,7 @@ class Router
         } catch (\Throwable $th) {
             respond([
                 'Respuesta' => 'ERROR',
-                'Data' => $th->getMessage()
+                'Data' => $th->getMessage() . ' in ' . $th->getFile() . ' on line ' . $th->getLine()
             ], 400);
 
             respond($th, 400);

@@ -39,7 +39,10 @@ class Productos
             $database = new Database();
             $param = [];
             $productos = $database->executeQuery(
-                "SELECT P.`Id`, P.`Nombre`, P.`Descripcion`, P.`IdMoneda`, P.`Precio`, P.`Descuento`, PA.`Base64`, PA.`Extension`
+                "SELECT P.`Id`, P.`Nombre`, P.`Descripcion`, P.`IdMoneda`, P.`Precio`, P.`Descuento`,
+                 PA.`Extension`,
+                    CASE WHEN PA.`Archivo` IS NOT NULL AND PA.`Archivo` != '' AND PA.`Nombre` != '' AND PA.`Nombre` IS NOT NULL 
+                    THEN CONCAT('https://welderar.com/Api/productos/imagenes/', PA.`Nombre`) ELSE '' END AS 'Archivo'
                     FROM `tbl_productos` P 
                     LEFT JOIN `tbl_productos_archivos` PA ON PA.`Orden` = 1 AND P.`Id` = PA.`IdProducto` 
                     WHERE P.`Estado` = 1",
