@@ -7,7 +7,7 @@ class Productos
         try {
             $database = new Database();
             $categorias = $database->executeQuery(
-                "SELECT C.`Id`, C.`Nombre`, C.`Titulo`
+                "SELECT C.`Id`, C.`Titulo` as 'Nombre', C.`Titulo`
                     FROM `tbl_categorias` C
                     WHERE C.`Estado` = 1 AND C.`Inicio` = 1"
             );
@@ -17,7 +17,9 @@ class Productos
                     'idCategoria' => $categoria['Id']
                 ];
                 $categorias[$aux]['Productos'] = $database->executeQuery(
-                    "SELECT P.`Id`, P.`Nombre`, P.`Descripcion`, P.`IdMoneda`, P.`Precio`, P.`Descuento`, PA.`Extension`
+                    "SELECT P.`Id`, P.`Nombre`, P.`Descripcion`, P.`IdMoneda`, P.`Precio`, P.`Descuento`, PA.`Extension`,
+                    CASE WHEN PA.`Archivo` IS NOT NULL AND PA.`Archivo` != '' AND PA.`Nombre` != '' AND PA.`Nombre` IS NOT NULL 
+                    THEN CONCAT('https://welderar.com/Api/productos/imagenes/', PA.`Nombre`) ELSE '' END AS 'Archivo'
                     FROM `tbl_productos_categorias` PC
                     INNER JOIN `tbl_productos` P ON P.`Id` = PC.`IdProducto`
                     LEFT JOIN `tbl_productos_archivos` PA ON PA.`Orden` = 1 AND P.`Id` = PA.`IdProducto` 
@@ -74,12 +76,21 @@ class Productos
             $param = [];
             $productos = $database->executeQuery(
                 //"SELECT P.`Id`, P.`Nombre`, PA.`Base64`, PA.`Extension`
-                "SELECT P.`Id`, P.`Nombre`, PA.`Extension`
+                "SELECT P.`Id`, P.`Nombre`,PA.`Archivo`, PA.`Extension`
                     FROM `tbl_productos` P 
                     LEFT JOIN `tbl_productos_archivos` PA ON PA.`Orden` = 1 AND P.`Id` = PA.`IdProducto` 
                     ",
                 $param
             );
+            $aux = 0;
+            foreach ($productos as $producto) {
+                if ($producto['Archivo'] != null && $producto['Archivo'] != "") {
+                    $productos[$aux]['Base64'] = fileToBase64($producto['Archivo']) ?? "";
+                } else {
+                    $productos[$aux]['Base64'] = "";
+                }
+                $aux++;
+            }
             return $productos;
         } catch (\Throwable $th) {
             return $th;
@@ -121,14 +132,25 @@ class Productos
                     WHERE PC.`IdProducto` = :idProducto ",
                     $param
                 );
-                $productos[$aux]['Archivos'] = $database->executeQuery(
+                $archivos = $database->executeQuery(
                     //"SELECT PA.`Id`, PA.`Base64`, PA.`Extension`, PA.`Orden`
-                    "SELECT PA.`Id`, PA.`Extension`, PA.`Orden`
+                    "SELECT PA.`Id`,PA.`archivo`, PA.`Extension`, PA.`Orden`
                     FROM `tbl_productos_archivos` PA
                     WHERE PA.`IdProducto` = :idProducto
                     ORDER BY PA.`Orden` ASC",
                     $param
                 );
+                $archivosAux = [];
+                foreach ($archivos as $archivo) {
+                    $archivosAux[] = [
+                        "Extension" => $archivo['Extension'],
+                        "Base64" => fileToBase64($archivo['archivo']) ?? "",
+                        "Orden" => $archivo['Orden'],
+                    ];
+                }
+
+                $productos[$aux]['Archivos'] = $archivosAux;
+                // $productos[$aux]['Archivos'] = $database->executeQuery(
                 $aux++;
             }
             return $productos;
@@ -206,20 +228,21 @@ class Productos
             $archivosArray = $data['archivos'];
             if (count($archivosArray) > 0) {
                 foreach ($archivosArray as $archivo) {
-                    $nombreArchivo = guardarBase64($archivo['File'], 'uploads/');
+                    $nombreArchivo = guardarBase64($archivo['File'], $archivo['Extension'], 'uploads/productos/');
                     if ($nombreArchivo) {
                         $params = [
                             'IdProducto' => $idProducto,
-                            'Archivo' => $nombreArchivo,
+                            'Archivo' => 'uploads/productos/' . $nombreArchivo,
                             'Nombre' => $nombreArchivo,
                             'Alt' => $nombreArchivo,
+                            'Extension' => $archivo['Extension'],
                             'Orden' => $archivo['Orden'],
                         ];
                         $database->executeQuery(
                             "INSERT INTO `tbl_productos_archivos`
-                                (`IdProducto`, `Archivo`, `Nombre`, `Alt`, `Orden`)
+                                (`IdProducto`, `Archivo`, `Nombre`, `Alt`, `Orden`,`Extension`)
                                 VALUES
-                                (:IdProducto, :Archivo, :Nombre, :Alt, :Orden) 
+                                (:IdProducto, :Archivo, :Nombre, :Alt, :Orden, :Extension)
                                 ",
                             $params
                         );
@@ -228,7 +251,19 @@ class Productos
             }
         }
     }
-
+    public function imagenes($imagen)
+    {
+        $database = new Database();
+        $params = [
+            'Nombre' => $imagen,
+        ];
+        $imagen = $database->executeQuery(
+            "SELECT `Archivo` FROM `tbl_productos_archivos`
+                    WHERE `Nombre` = :Nombre",
+            $params
+        );
+        return $imagen[0]['Archivo'] ?? "";
+    }
     public function editar()
     {
         try {
@@ -327,30 +362,49 @@ class Productos
                     $params = [
                         'IdProducto' => $data['id'],
                     ];
-                    $database->executeQuery(
-                        "DELETE FROM`tbl_productos_archivos`
+                    $archivosPrevios = $database->executeQuery(
+                        "SELECT * FROM `tbl_productos_archivos`
                             WHERE `IdProducto` = :IdProducto ",
                         $params
                     );
 
+                    if (count($archivosPrevios) > 0) {
+                        foreach ($archivosPrevios as $archivo) {
+                            if (file_exists($archivo['Archivo'])) {
+                                unlink($archivo['Archivo']);
+                            }
+                        }
+                        $params = [
+                            'IdProducto' => $data['id'],
+                        ];
+                        $database->executeQuery(
+                            "DELETE FROM`tbl_productos_archivos`
+                            WHERE `IdProducto` = :IdProducto ",
+                            $params
+                        );
+                    }
+
                     foreach ($archivosArray as $archivo) {
-                        $nombreArchivo = guardarBase64($archivo['File'], 'uploads/');
-                        if ($nombreArchivo) {
+                        $nombreArchivo = guardarBase64($archivo['File'], $archivo['Extension'], 'uploads/productos/');
+                        if ($nombreArchivo == true) {
                             $params = [
                                 'IdProducto' => $data['id'],
-                                'Archivo' => $nombreArchivo,
+                                'Archivo' => 'uploads/productos/' . $nombreArchivo,
                                 'Nombre' => $nombreArchivo,
                                 'Alt' => $nombreArchivo,
                                 'Orden' => $archivo['Orden'],
+                                'Extension' => $archivo['Extension'],
                             ];
                             $database->executeQuery(
                                 "INSERT INTO `tbl_productos_archivos`
-                                (`IdProducto`, `Archivo`, `Nombre`, `Alt`, `Orden`)
+                                (`IdProducto`, `Archivo`, `Nombre`, `Alt`, `Orden`, `Extension`)
                                 VALUES
-                                (:IdProducto, :Archivo, :Nombre, :Alt, :Orden) 
+                                (:IdProducto, :Archivo, :Nombre, :Alt, :Orden, :Extension)
                                 ",
                                 $params
                             );
+                        } else {
+                            return $nombreArchivo;
                         }
                     }
                 }
@@ -358,7 +412,7 @@ class Productos
             return "OK";
         } catch (\Throwable $th) {
             //throw $th;
-            return $th;
+            return $th->getMessage();
         }
 
 

@@ -1,5 +1,6 @@
 <?php
-class Database {
+class Database
+{
     private $host = 'localhost';
     private $dbname = 'ecommerce';
     private $username = 'root';
@@ -7,8 +8,9 @@ class Database {
     private $pdo;
 
     // Constructor: inicializa las propiedades y establece la conexión
-    public function __construct() {
-       
+    public function __construct()
+    {
+
         try {
             $this->pdo = new PDO("mysql:host=$this->host;dbname=$this->dbname;charset=utf8", $this->username, $this->password);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -18,7 +20,8 @@ class Database {
     }
 
     // Método para ejecutar consultas SQL
-    public function executeQuery($query, $params = []) {
+    public function executeQuery($query, $params = [])
+    {
         try {
             $stmt = $this->pdo->prepare($query);
             $stmt->execute($params);
@@ -34,15 +37,16 @@ class Database {
             // Devuelve la cantidad de filas afectadas para otras consultas
             return $stmt->rowCount();
         } catch (PDOException $e) {
-           respond([
-            "Resultado" => "",
-            "Data" => $e->getMessage()
-           ]);
+            respond([
+                "Resultado" => "",
+                "Data" => $e->getMessage()
+            ]);
         }
     }
 
     // Método para cerrar la conexión (opcional)
-    public function closeConnection() {
+    public function closeConnection()
+    {
         $this->pdo = null;
     }
 }
